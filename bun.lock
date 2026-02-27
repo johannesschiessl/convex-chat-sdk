@@ -5,6 +5,7 @@
     "": {
       "name": "@example/sample-component",
       "dependencies": {
+        "@chat-adapter/telegram": "^4.15.0",
         "chat": "^4.15.0",
       },
       "devDependencies": {
@@ -87,6 +88,10 @@
     "@babel/traverse": ["@babel/traverse@7.29.0", "", { "dependencies": { "@babel/code-frame": "^7.29.0", "@babel/generator": "^7.29.0", "@babel/helper-globals": "^7.28.0", "@babel/parser": "^7.29.0", "@babel/template": "^7.28.6", "@babel/types": "^7.29.0", "debug": "^4.3.1" } }, "sha512-4HPiQr0X7+waHfyXPZpWPfWL/J7dcN1mx9gL6WdQVMbPnF3+ZhSMs8tCxN7oHddJE9fhNE7+lxdnlyemKfJRuA=="],
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
+
+    "@chat-adapter/shared": ["@chat-adapter/shared@4.15.0", "", { "dependencies": { "chat": "4.15.0" } }, "sha512-otIS9zf0wY3DMc5WGK1sOJiASSeMHcdEqmuxDWW/6tK7gdRE7FOVE+dfo/74ykj9QZwv+a9cByh1cimaeHbiAw=="],
+
+    "@chat-adapter/telegram": ["@chat-adapter/telegram@4.15.0", "", { "dependencies": { "@chat-adapter/shared": "4.15.0", "chat": "4.15.0" } }, "sha512-EMMPr3h86Xg1Pdj7BSXPmCI3umSHNx5TIHd23dNL5YG4cIb2mE1dMeVRSzgscLfWVh2We0JpPhjofSKPBt5G1Q=="],
 
     "@convex-dev/eslint-plugin": ["@convex-dev/eslint-plugin@1.1.1", "", { "dependencies": { "@typescript-eslint/utils": "~8.49.0" }, "peerDependencies": { "convex": "^1.31.0" } }, "sha512-4NsTWNJJLPbti10LZsV1/7UkbaMPFxNz5Ekd3yW5bDkaoU1I0b4TJxk0V+ShbNFTJ2fSqTxm+iGy9XSNCmAoVA=="],
 
