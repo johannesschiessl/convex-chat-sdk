@@ -1,20 +1,17 @@
 import { httpRouter } from "convex/server";
-import { registerRoutes } from "convex-chat-sdk";
-import { components } from "./_generated/api";
+import { httpAction } from "./_generated/server";
+import { createBot } from "./chat";
 
 const http = httpRouter();
 
-// Initialize the component
+http.route({
+  path: "/webhooks/telegram",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const bot = createBot(ctx);
 
-// Register HTTP routes for the component
-// This will expose a GET endpoint at /comments/last that returns the most recent comment
-registerRoutes(http, components.chatSdk, {
-  pathPrefix: "/comments",
+    return await bot.webhooks.telegram(request);
+  }),
 });
-
-// You can also register routes at different paths
-// chatSdk.registerRoutes(http, {
-//   path: "/api/comments/latest",
-// });
 
 export default http;
