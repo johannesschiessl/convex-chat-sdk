@@ -1,11 +1,14 @@
 import type { Lock, StateAdapter } from "chat";
+import type { GenericActionCtx, GenericDataModel } from "convex/server";
 import type { ComponentApi } from "../component/_generated/component.js";
-import type { ActionCtx } from "../component/_generated/server.js";
 
-export function createClient(component: ComponentApi) {
+export function createClient<
+  DataModel extends GenericDataModel = GenericDataModel,
+>(component: ComponentApi) {
   return {
-    adapter(ctx: ActionCtx): StateAdapter {
+    adapter(ctx: GenericActionCtx<DataModel>): StateAdapter {
       return {
+        // These are methods that the state adapter must implement, do not remove them.
         async connect() {},
         async disconnect() {},
 
