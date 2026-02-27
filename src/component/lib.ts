@@ -1,18 +1,13 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 
-/**
- * Shared lock validator to keep return + args aligned
- */
 const lockValidator = v.object({
   threadId: v.string(),
   token: v.string(),
   expiresAt: v.number(),
 });
 
-/* -------------------------------------------------------------------------- */
-/*                                  SUBSCRIPTIONS                             */
-/* -------------------------------------------------------------------------- */
+// SUBSCRIPTIONS
 
 export const subscribe = mutation({
   args: {
@@ -70,9 +65,7 @@ export const isSubscribed = query({
   },
 });
 
-/* -------------------------------------------------------------------------- */
-/*                                      LOCKS                                 */
-/* -------------------------------------------------------------------------- */
+// LOCKS
 
 export const acquireLock = mutation({
   args: {
@@ -159,9 +152,7 @@ export const extendLock = mutation({
   },
 });
 
-/* -------------------------------------------------------------------------- */
-/*                                       KV                                   */
-/* -------------------------------------------------------------------------- */
+// KV
 
 export const get = query({
   args: {
@@ -237,9 +228,7 @@ export const del = mutation({
   },
 });
 
-/* -------------------------------------------------------------------------- */
-/*                                  CLEANUP                                   */
-/* -------------------------------------------------------------------------- */
+// CLEANUP
 
 export const cleanupExpired = internalMutation({
   args: {
