@@ -1,11 +1,10 @@
 import type { Lock, StateAdapter } from "chat";
-import type { GenericMutationCtx } from "convex/server";
 import type { ComponentApi } from "../component/_generated/component.js";
-import type { DataModel } from "../component/_generated/dataModel.js";
+import type { ActionCtx } from "../component/_generated/server.js";
 
 export function createClient(component: ComponentApi) {
   return {
-    adapter(ctx: GenericMutationCtx<DataModel>): StateAdapter {
+    adapter(ctx: ActionCtx): StateAdapter {
       return {
         async connect() {},
         async disconnect() {},
