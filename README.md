@@ -126,8 +126,8 @@ Creates a Convex-backed Chat SDK state adapter.
 
 - This package is built on Chat SDK, so adapter behavior and message formats are
   defined by Chat SDK itself.
-- Follow the relevant Chat SDK adapter docs and
-  validate them in your own environment.
+- Follow the relevant Chat SDK adapter docs and validate them in your own
+  environment.
 
 Found a bug?
 [File an issue](https://github.com/johannesschiessl/convex-chat-sdk/issues).
