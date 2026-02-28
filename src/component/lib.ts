@@ -103,10 +103,7 @@ export const acquireLock = mutation({
 
 export const releaseLock = mutation({
   args: {
-    lock: v.object({
-      threadId: v.string(),
-      token: v.string(),
-    }),
+    lock: lockValidator,
   },
   returns: v.null(),
   handler: async (ctx, { lock }) => {
@@ -125,10 +122,7 @@ export const releaseLock = mutation({
 
 export const extendLock = mutation({
   args: {
-    lock: v.object({
-      threadId: v.string(),
-      token: v.string(),
-    }),
+    lock: lockValidator,
     ttlMs: v.number(),
   },
   returns: v.boolean(),

@@ -41,7 +41,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       extendLock: FunctionReference<
         "mutation",
         "internal",
-        { lock: { threadId: string; token: string }; ttlMs: number },
+        {
+          lock: { expiresAt: number; threadId: string; token: string };
+          ttlMs: number;
+        },
         boolean,
         Name
       >;
@@ -62,7 +65,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       releaseLock: FunctionReference<
         "mutation",
         "internal",
-        { lock: { threadId: string; token: string } },
+        { lock: { expiresAt: number; threadId: string; token: string } },
         null,
         Name
       >;

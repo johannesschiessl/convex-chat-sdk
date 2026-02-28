@@ -93,6 +93,7 @@ describe("component lib", () => {
         lock: {
           threadId: "thread-1",
           token: "wrong-token",
+          expiresAt: lock!.expiresAt,
         },
         ttlMs: 2_000,
       }),
@@ -105,6 +106,7 @@ describe("component lib", () => {
         lock: {
           threadId: lock!.threadId,
           token: lock!.token,
+          expiresAt: lock!.expiresAt,
         },
         ttlMs: 4_000,
       }),
@@ -126,6 +128,7 @@ describe("component lib", () => {
       lock: {
         threadId: "thread-1",
         token: "wrong-token",
+        expiresAt: lock!.expiresAt,
       },
     });
 
@@ -142,6 +145,7 @@ describe("component lib", () => {
       lock: {
         threadId: lock!.threadId,
         token: lock!.token,
+        expiresAt: lock!.expiresAt,
       },
     });
 
