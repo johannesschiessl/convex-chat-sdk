@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { createBot } from "./chat";
+import { createBot } from "./bot";
 
 const http = httpRouter();
 
