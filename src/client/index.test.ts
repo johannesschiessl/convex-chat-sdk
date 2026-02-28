@@ -1,8 +1,8 @@
 import { httpRouter } from "convex/server";
 import { describe, expect, test, vi } from "vitest";
-import { createClient, registerWebhooks } from "./index.js";
+import { createChat, registerWebhooks } from "./index.js";
 
-describe("createClient", () => {
+describe("createChat", () => {
   test("forwards subscription and lock operations to the component api", async () => {
     const runMutation = vi
       .fn()
@@ -31,10 +31,19 @@ describe("createClient", () => {
       },
     } as const;
 
-    const adapter = createClient(component as never).adapter({
-      runMutation,
-      runQuery,
-    } as never);
+    const adapter = createChat(
+      component as never,
+      {
+        runMutation,
+        runQuery,
+      } as never,
+      {
+        userName: "convex-bot",
+        adapters: {
+          telegram: {} as never,
+        },
+      },
+    ).getState();
 
     await expect(adapter.connect()).resolves.toBeUndefined();
     await expect(adapter.disconnect()).resolves.toBeUndefined();
@@ -120,10 +129,19 @@ describe("createClient", () => {
       },
     } as const;
 
-    const adapter = createClient(component as never).adapter({
-      runMutation,
-      runQuery,
-    } as never);
+    const adapter = createChat(
+      component as never,
+      {
+        runMutation,
+        runQuery,
+      } as never,
+      {
+        userName: "convex-bot",
+        adapters: {
+          telegram: {} as never,
+        },
+      },
+    ).getState();
 
     await expect(adapter.get("state")).resolves.toEqual({ count: 2 });
     await expect(adapter.get("missing")).resolves.toBeNull();
