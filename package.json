@@ -1,7 +1,10 @@
 {
   "name": "convex-chat-sdk",
-  "description": "A chat sdk component for Convex.",
-  "repository": "github:johannesschiessl/convex-chat-sdk",
+  "description": "A Convex component and state adapter for Chat SDK.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johannesschiessl/convex-chat-sdk.git"
+  },
   "homepage": "https://github.com/johannesschiessl/convex-chat-sdk#readme",
   "bugs": {
     "url": "https://github.com/johannesschiessl/convex-chat-sdk/issues"
@@ -10,7 +13,9 @@
   "license": "Apache-2.0",
   "keywords": [
     "convex",
-    "component"
+    "component",
+    "chat-sdk",
+    "bot"
   ],
   "type": "module",
   "scripts": {
@@ -28,15 +33,19 @@
     "test:watch": "vitest --typecheck --clearScreen false",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:coverage": "vitest run --coverage --coverage.reporter=text",
-    "preversion": "npm ci && npm run build:clean && run-p test lint typecheck",
-    "prepublishOnly": "npm whoami || npm login",
+    "preversion": "npm run build:clean && run-p test lint typecheck",
+    "prepack": "npm run build:clean",
+    "prepublishOnly": "run-p test lint typecheck",
+    "pack:dry-run": "npm pack --dry-run",
     "alpha": "npm version prerelease --preid alpha && npm publish --tag alpha && git push --follow-tags",
     "release": "npm version patch && npm publish && git push --follow-tags",
     "version": "vim -c 'normal o' -c 'normal o## '$npm_package_version CHANGELOG.md && prettier -w CHANGELOG.md && git add CHANGELOG.md"
   },
   "files": [
     "dist",
-    "src"
+    "src/component/**/*.ts",
+    "src/test.ts",
+    "!src/component/**/*.test.*"
   ],
   "exports": {
     "./package.json": "./package.json",
@@ -44,16 +53,14 @@
       "types": "./dist/client/index.d.ts",
       "default": "./dist/client/index.js"
     },
-    "./react": {
-      "types": "./dist/react/index.d.ts",
-      "default": "./dist/react/index.js"
-    },
     "./test": "./src/test.ts",
     "./_generated/component.js": {
-      "types": "./dist/component/_generated/component.d.ts"
+      "types": "./dist/component/_generated/component.d.ts",
+      "default": "./dist/component/_generated/component.js"
     },
     "./_generated/component": {
-      "types": "./dist/component/_generated/component.d.ts"
+      "types": "./dist/component/_generated/component.d.ts",
+      "default": "./dist/component/_generated/component.js"
     },
     "./convex.config.js": {
       "types": "./dist/component/convex.config.d.ts",
@@ -63,6 +70,9 @@
       "types": "./dist/component/convex.config.d.ts",
       "default": "./dist/component/convex.config.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "peerDependencies": {
     "chat": "^4.15.0",
@@ -98,6 +108,7 @@
     "vitest": "4.0.18",
     "@chat-adapter/telegram": "^4.15.0"
   },
+  "main": "./dist/client/index.js",
   "types": "./dist/client/index.d.ts",
   "module": "./dist/client/index.js"
 }

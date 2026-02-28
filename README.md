@@ -12,6 +12,12 @@ Install the component, Chat SDK itself, and the adapter you want to use in your
 Convex app:
 
 ```sh
+npm install convex-chat-sdk chat @chat-adapter/telegram
+```
+
+Or with Bun:
+
+```sh
 bun add convex-chat-sdk chat @chat-adapter/telegram
 ```
 
