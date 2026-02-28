@@ -24,31 +24,70 @@ import type { FunctionReference } from "convex/server";
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
     lib: {
-      add: FunctionReference<
+      acquireLock: FunctionReference<
         "mutation",
         "internal",
-        { targetId: string; text: string; userId: string },
-        string,
+        { threadId: string; ttlMs: number },
+        { expiresAt: number; threadId: string; token: string } | null,
         Name
       >;
-      list: FunctionReference<
+      del: FunctionReference<
+        "mutation",
+        "internal",
+        { key: string },
+        null,
+        Name
+      >;
+      extendLock: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          lock: { expiresAt: number; threadId: string; token: string };
+          ttlMs: number;
+        },
+        boolean,
+        Name
+      >;
+      get: FunctionReference<
         "query",
         "internal",
-        { limit?: number; targetId: string },
-        Array<{
-          _creationTime: number;
-          _id: string;
-          targetId: string;
-          text: string;
-          userId: string;
-        }>,
+        { key: string },
+        string | null,
         Name
       >;
-      translate: FunctionReference<
-        "action",
+      isSubscribed: FunctionReference<
+        "query",
         "internal",
-        { baseUrl: string; commentId: string },
-        string,
+        { threadId: string },
+        boolean,
+        Name
+      >;
+      releaseLock: FunctionReference<
+        "mutation",
+        "internal",
+        { lock: { expiresAt: number; threadId: string; token: string } },
+        null,
+        Name
+      >;
+      set: FunctionReference<
+        "mutation",
+        "internal",
+        { key: string; ttlMs?: number; valueJson: string },
+        null,
+        Name
+      >;
+      subscribe: FunctionReference<
+        "mutation",
+        "internal",
+        { threadId: string },
+        null,
+        Name
+      >;
+      unsubscribe: FunctionReference<
+        "mutation",
+        "internal",
+        { threadId: string },
+        null,
         Name
       >;
     };

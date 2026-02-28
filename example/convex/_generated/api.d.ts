@@ -8,7 +8,7 @@
  * @module
  */
 
-import type * as example from "../example.js";
+import type * as bot from "../bot.js";
 import type * as http from "../http.js";
 
 import type {
@@ -18,7 +18,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  example: typeof example;
+  bot: typeof bot;
   http: typeof http;
 }>;
 
