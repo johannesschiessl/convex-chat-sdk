@@ -2,9 +2,10 @@
 
 [![npm version](https://badge.fury.io/js/convex-chat-sdk.svg)](https://badge.fury.io/js/convex-chat-sdk)
 
-Use [Chat SDK](https://www.chat-sdk.dev/) bots with [Convex](https://www.convex.dev/).
-This package provides a Convex component plus a small client API that wires Chat
-SDK state into Convex and exposes adapter webhooks through `http.ts`.
+Use [Chat SDK](https://www.chat-sdk.dev/) bots with
+[Convex](https://www.convex.dev/). This package provides a Convex component plus
+a small client API that wires Chat SDK state into Convex and exposes adapter
+webhooks through `http.ts`.
 
 Telegram is the only adapter tested with this component so far. More adapters
 should work in principle through Chat SDK, but they have not been validated in
@@ -12,7 +13,8 @@ this package yet.
 
 ## Installation
 
-Install the component and the adapter you want to use in your Convex app:
+Install the component, Chat SDK itself, and the adapter you want to use in your
+Convex app:
 
 ```sh
 bun add convex-chat-sdk chat @chat-adapter/telegram
@@ -43,18 +45,20 @@ This exposes the component as `components.chatSdk` in your generated Convex API.
 
 ### 2. Create a bot
 
-Create your bot from an action or HTTP action context and pass the component
-reference plus your Chat SDK configuration.
+Build your bot from an action or HTTP action context with `new Chat(...)` and
+plug the Convex state adapter directly into the config.
 
 ```ts
 // convex/bot.ts
 import { createTelegramAdapter } from "@chat-adapter/telegram";
-import { createChat } from "convex-chat-sdk";
+import { Chat } from "chat";
+import { createConvexState } from "convex-chat-sdk";
 import { components } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
 
 export const createBot = (ctx: ActionCtx) => {
-  const bot = createChat(components.chatSdk, ctx, {
+  const bot = new Chat({
+    state: createConvexState(ctx, components.chatSdk),
     userName: "convex-bot",
     adapters: {
       telegram: createTelegramAdapter(),
@@ -69,9 +73,8 @@ export const createBot = (ctx: ActionCtx) => {
 };
 ```
 
-`createChat(...)` creates a normal Chat SDK bot, but uses Convex as the state
-adapter. Subscription state, locks, and key-value state are stored through the
-component.
+`createConvexState(...)` creates a Convex-backed Chat SDK state adapter.
+Subscription state, locks, and key-value state are stored through the component.
 
 ### 3. Register webhook routes
 
@@ -80,13 +83,13 @@ factory:
 
 ```ts
 // convex/http.ts
-import { registerWebhooks } from "convex-chat-sdk";
+import { registerChatSdkWebhooks } from "convex-chat-sdk";
 import { httpRouter } from "convex/server";
 import { createBot } from "./bot";
 
 const http = httpRouter();
 
-registerWebhooks(http, createBot, { path: "/chatsdk" });
+registerChatSdkWebhooks(http, createBot, { path: "/chatsdk" });
 
 export default http;
 ```
@@ -162,16 +165,15 @@ the Chat SDK docs as the source of truth for message payloads and capabilities.
 
 ## API
 
-### `createChat(component, ctx, config)`
+### `createConvexState(ctx, component)`
 
-Creates a Chat SDK bot backed by Convex state.
+Creates a Convex-backed Chat SDK state adapter.
 
-- `component`: usually `components.chatSdk`
 - `ctx`: a Convex action or HTTP action context
-- `config`: standard Chat SDK config except `state`, which is provided by this
-  package
+- `component`: usually `components.chatSdk`
+- returns: a Chat SDK `state` adapter
 
-### `registerWebhooks(http, createBot, options?)`
+### `registerChatSdkWebhooks(http, createBot, options?)`
 
 Registers a POST wildcard route that dispatches requests to
 `bot.webhooks[adapterName]`.
