@@ -53,7 +53,7 @@ import type { ActionCtx } from "./_generated/server";
 
 export const createBot = (ctx: ActionCtx) => {
   const bot = new Chat({
-    state: createConvexState(ctx, components.chatSdk),
+    state: createConvexState(components.chatSdk, ctx),
     userName: "convex-bot",
     adapters: {
       telegram: createTelegramAdapter(),
