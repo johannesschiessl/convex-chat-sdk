@@ -1,6 +1,33 @@
-import type { Lock, StateAdapter } from "chat";
-import type { GenericActionCtx, GenericDataModel } from "convex/server";
+import type { Adapter, Lock, StateAdapter, WebhookOptions } from "chat";
+import {
+  httpActionGeneric,
+  type GenericActionCtx,
+  type GenericDataModel,
+  type HttpRouter,
+} from "convex/server";
 import type { ComponentApi } from "../component/_generated/component.js";
+
+const WEBHOOK_PATH_PREFIX = "/chatsdk/";
+
+export type RegisterWebhooksOptions = {
+  path?: string;
+};
+
+type BotWithWebhooks<TAdapters extends Record<string, Adapter>> = {
+  webhooks: {
+    [K in keyof TAdapters]: (
+      request: Request,
+      options?: WebhookOptions,
+    ) => Promise<Response>;
+  };
+};
+
+function normalizeWebhookPathPrefix(path: string) {
+  const withLeadingSlash = path.startsWith("/") ? path : `/${path}`;
+  return withLeadingSlash.endsWith("/")
+    ? withLeadingSlash
+    : `${withLeadingSlash}/`;
+}
 
 export function createClient<
   DataModel extends GenericDataModel = GenericDataModel,
@@ -66,4 +93,50 @@ export function createClient<
       };
     },
   };
+}
+
+export function registerWebhooks<
+  DataModel extends GenericDataModel = GenericDataModel,
+  TAdapters extends Record<string, Adapter> = Record<string, Adapter>,
+>(
+  http: HttpRouter,
+  createBot: (ctx: GenericActionCtx<DataModel>) => BotWithWebhooks<TAdapters>,
+  options: RegisterWebhooksOptions = {},
+) {
+  const pathPrefix = normalizeWebhookPathPrefix(
+    options.path ?? WEBHOOK_PATH_PREFIX,
+  );
+
+  http.route({
+    pathPrefix,
+    method: "POST",
+    handler: httpActionGeneric(async (ctx, request) => {
+      const path = new URL(request.url).pathname;
+      const adapterName = path.slice(pathPrefix.length);
+
+      if (adapterName.length === 0 || adapterName.includes("/")) {
+        return new Response("Not found", { status: 404 });
+      }
+
+      const bot = createBot(ctx as unknown as GenericActionCtx<DataModel>);
+      const handler = bot.webhooks[adapterName as keyof typeof bot.webhooks];
+
+      if (handler === undefined) {
+        return new Response("Not found", { status: 404 });
+      }
+
+      const tasks: Promise<unknown>[] = [];
+      const response = await handler(request, {
+        waitUntil(task) {
+          tasks.push(task);
+        },
+      });
+
+      await Promise.allSettled(tasks);
+
+      return response;
+    }),
+  });
+
+  return http;
 }

@@ -1,5 +1,6 @@
+import { httpRouter } from "convex/server";
 import { describe, expect, test, vi } from "vitest";
-import { createClient } from "./index.js";
+import { createClient, registerWebhooks } from "./index.js";
 
 describe("createClient", () => {
   test("forwards subscription and lock operations to the component api", async () => {
@@ -148,5 +149,102 @@ describe("createClient", () => {
     expect(runMutation).toHaveBeenNthCalledWith(2, component.lib.del, {
       key: "state",
     });
+  });
+});
+
+describe("registerWebhooks", () => {
+  test("registers a wildcard webhook route and dispatches to the matching adapter", async () => {
+    const createBot = vi.fn((_ctx: unknown) => ({
+      webhooks: {
+        telegram: vi.fn(
+          async (
+            _request: Request,
+            options?: { waitUntil?: (task: Promise<unknown>) => void },
+          ) => {
+            options?.waitUntil?.(
+              Promise.resolve().then(() => {
+                waitUntilSettled = true;
+              }),
+            );
+
+            return new Response("telegram", { status: 202 });
+          },
+        ),
+        slack: vi.fn(async () => new Response("slack", { status: 200 })),
+      },
+    }));
+    let waitUntilSettled = false;
+
+    const http = httpRouter();
+    expect(registerWebhooks(http, createBot)).toBe(http);
+    expect(http.getRoutes()).toHaveLength(1);
+    expect(http.getRoutes()[0]?.[0]).toBe("/chatsdk/*");
+    expect(http.getRoutes()[0]?.[1]).toBe("POST");
+
+    const handler = http.getRoutes()[0]?.[2] as unknown as {
+      _handler: (ctx: unknown, request: Request) => Promise<Response>;
+    };
+    const ctx = { runMutation: vi.fn(), runQuery: vi.fn(), runAction: vi.fn() };
+
+    const response = await handler._handler(
+      ctx,
+      new Request("https://example.com/chatsdk/telegram", { method: "POST" }),
+    );
+
+    expect(createBot).toHaveBeenCalledWith(ctx);
+    const bot = createBot.mock.results[0]?.value;
+    expect(bot.webhooks.telegram).toHaveBeenCalledTimes(1);
+    expect(bot.webhooks.slack).not.toHaveBeenCalled();
+    expect(response.status).toBe(202);
+    await expect(response.text()).resolves.toBe("telegram");
+    expect(waitUntilSettled).toBe(true);
+  });
+
+  test("returns 404 for unknown adapter paths", async () => {
+    const createBot = vi.fn(() => ({
+      webhooks: {
+        telegram: vi.fn(async () => new Response("telegram")),
+      },
+    }));
+
+    const http = registerWebhooks(httpRouter(), createBot);
+    const handler = http.getRoutes()[0]?.[2] as unknown as {
+      _handler: (ctx: unknown, request: Request) => Promise<Response>;
+    };
+
+    const response = await handler._handler(
+      {},
+      new Request("https://example.com/chatsdk/unknown", { method: "POST" }),
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toBe("Not found");
+    expect(createBot).toHaveBeenCalledTimes(1);
+  });
+
+  test("supports overriding the webhook path", async () => {
+    const createBot = vi.fn(() => ({
+      webhooks: {
+        telegram: vi.fn(async () => new Response("telegram", { status: 200 })),
+      },
+    }));
+
+    const http = registerWebhooks(httpRouter(), createBot, {
+      path: "/webhooks",
+    });
+
+    expect(http.getRoutes()[0]?.[0]).toBe("/webhooks/*");
+
+    const handler = http.getRoutes()[0]?.[2] as unknown as {
+      _handler: (ctx: unknown, request: Request) => Promise<Response>;
+    };
+
+    const response = await handler._handler(
+      {},
+      new Request("https://example.com/webhooks/telegram", { method: "POST" }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("telegram");
   });
 });
