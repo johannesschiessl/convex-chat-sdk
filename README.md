@@ -1,88 +1,32 @@
-# Convex Component Template
+# Convex Chat SDK
 
-This is a Convex component, ready to be published on npm.
+[![npm version](https://badge.fury.io/js/convex-chat-sdk.svg)](https://badge.fury.io/js/convex-chat-sdk)
 
-To create your own component:
+Use [Chat SDK](https://www.chat-sdk.dev/) bots with [Convex](https://www.convex.dev/).
+This package provides a Convex component plus a small client API that wires Chat
+SDK state into Convex and exposes adapter webhooks through `http.ts`.
 
-1. Write code in src/component for your component. Component-specific tables,
-   queries, mutations, and actions go here.
-1. Write code in src/client for the Class that interfaces with the component.
-   This is the bridge your users will access to get information into and out of
-   your component
-1. Write example usage in example/convex/example.ts.
-1. Delete the text in this readme until `---` and flesh out the README.
-1. Publish to npm with `npm run alpha` or `npm run release`.
-
-To develop your component run a dev process in the example project:
-
-```sh
-npm i
-npm run dev
-```
-
-`npm i` will do the install and an initial build. `npm run dev` will start a
-file watcher to re-build the component, as well as the example project frontend
-and backend, which does codegen and installs the component.
-
-Modify the schema and index files in src/component/ to define your component.
-
-Write a client for using this component in src/client/index.ts.
-
-If you won't be adding frontend code (e.g. React components) to this component
-you can delete "./react" references in package.json and "src/react/" directory.
-If you will be adding frontend code, add a peer dependency on React in
-package.json.
-
-### Component Directory structure
-
-```
-.
-├── README.md           documentation of your component
-├── package.json        component name, version number, other metadata
-├── package-lock.json   Components are like libraries, package-lock.json
-│                       is .gitignored and ignored by consumers.
-├── src
-│   ├── component/
-│   │   ├── _generated/ Files here are generated for the component.
-│   │   ├── convex.config.ts  Name your component here and use other components
-│   │   ├── lib.ts    Define functions here and in new files in this directory
-│   │   └── schema.ts   schema specific to this component
-│   ├── client/
-│   │   └── index.ts    Code that needs to run in the app that uses the
-│   │                   component. Generally the app interacts directly with
-│   │                   the component's exposed API (src/component/*).
-│   └── react/          Code intended to be used on the frontend goes here.
-│       │               Your are free to delete this if this component
-│       │               does not provide code.
-│       └── index.ts
-├── example/            example Convex app that uses this component
-│   └── convex/
-│       ├── _generated/       Files here are generated for the example app.
-│       ├── convex.config.ts  Imports and uses this component
-│       ├── myFunctions.ts    Functions that use the component
-│       └── schema.ts         Example app schema
-└── dist/               Publishing artifacts will be created here.
-```
-
----
-
-# Convex Chat Sdk
-
-[![npm version](https://badge.fury.io/js/@example%2Fchat-sdk.svg)](https://badge.fury.io/js/@example%2Fchat-sdk)
-
-<!-- START: Include on https://convex.dev/components -->
-
-- [ ] What is some compelling syntax as a hook?
-- [ ] Why should you use this component?
-- [ ] Links to docs / other resources?
-
-Found a bug? Feature request?
-[File it here](https://github.com/johannesschiessl/convex-chat-sdk/issues).
+Telegram is the only adapter tested with this component so far. More adapters
+should work in principle through Chat SDK, but they have not been validated in
+this package yet.
 
 ## Installation
 
-Create a `convex.config.ts` file in your app's `convex/` folder and install the
-component by calling `use`:
+Install the component and the adapter you want to use in your Convex app:
+
+```sh
+bun add convex-chat-sdk chat @chat-adapter/telegram
+```
+
+## Usage Guide
+
+The basic setup has three parts:
+
+1. Install the Convex component in `convex/convex.config.ts`.
+2. Create a bot in `convex/bot.ts`.
+3. Register webhook routes in `convex/http.ts`.
+
+### 1. Install the component
 
 ```ts
 // convex/convex.config.ts
@@ -95,52 +39,154 @@ app.use(chatSdk);
 export default app;
 ```
 
-## Usage
+This exposes the component as `components.chatSdk` in your generated Convex API.
+
+### 2. Create a bot
+
+Create your bot from an action or HTTP action context and pass the component
+reference plus your Chat SDK configuration.
 
 ```ts
+// convex/bot.ts
+import { createTelegramAdapter } from "@chat-adapter/telegram";
+import { createChat } from "convex-chat-sdk";
 import { components } from "./_generated/api";
+import type { ActionCtx } from "./_generated/server";
 
-export const addComment = mutation({
-  args: { text: v.string(), targetId: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.runMutation(components.chatSdk.lib.add, {
-      text: args.text,
-      targetId: args.targetId,
-      userId: await getAuthUserId(ctx),
-    });
-  },
-});
+export const createBot = (ctx: ActionCtx) => {
+  const bot = createChat(components.chatSdk, ctx, {
+    userName: "convex-bot",
+    adapters: {
+      telegram: createTelegramAdapter(),
+    },
+  });
+
+  bot.onNewMessage(/.+/s, async (thread, message) => {
+    await thread.post(`You said: ${message.text}`);
+  });
+
+  return bot;
+};
 ```
 
-See more example usage in [example.ts](./example/convex/example.ts).
+`createChat(...)` creates a normal Chat SDK bot, but uses Convex as the state
+adapter. Subscription state, locks, and key-value state are stored through the
+component.
 
-### HTTP Routes
+### 3. Register webhook routes
 
-You can register HTTP routes for the component to expose HTTP endpoints:
+Register a wildcard webhook route in `convex/http.ts` and point it at your bot
+factory:
 
 ```ts
+// convex/http.ts
+import { registerWebhooks } from "convex-chat-sdk";
 import { httpRouter } from "convex/server";
-import { registerRoutes } from "convex-chat-sdk";
-import { components } from "./_generated/api";
+import { createBot } from "./bot";
 
 const http = httpRouter();
 
-registerRoutes(http, components.chatSdk, {
-  pathPrefix: "/comments",
-});
+registerWebhooks(http, createBot, { path: "/chatsdk" });
 
 export default http;
 ```
 
-This will expose a GET endpoint that returns the most recent comment as JSON.
-The endpoint requires a `targetId` query parameter. See
-[http.ts](./example/convex/http.ts) for a complete example.
+With the configuration above, adapter webhooks are available at:
 
-<!-- END: Include on https://convex.dev/components -->
+```text
+/chatsdk/<adapter-name>
+```
 
-Run the example:
+For Telegram, that means:
+
+```text
+/chatsdk/telegram
+```
+
+If you omit the `path` option, the default prefix is `/chatsdk/`, so Telegram
+would be exposed at `/chatsdk/telegram`.
+
+## Telegram Setup
+
+The Telegram adapter in Chat SDK expects the standard Telegram bot credentials.
+Make these available to your Convex deployment:
 
 ```sh
-npm i
-npm run dev
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_WEBHOOK_SECRET_TOKEN=...
 ```
+
+Then register Telegram's webhook URL to point at your Convex HTTP endpoint. The
+exact URL depends on your Convex deployment and the `path` you chose above.
+
+Example:
+
+```text
+https://<your-convex-deployment-site-url>/chatsdk/telegram
+```
+
+See the Chat SDK Telegram adapter docs for the current setup details:
+
+- https://www.chat-sdk.dev/docs/adapters/telegram
+
+## Writing Handlers
+
+Once you have a bot instance, you can use the usual Chat SDK handler APIs, for
+example:
+
+```ts
+bot.onNewMessage(/.+/s, async (thread, message) => {
+  await thread.post(`You said: ${message.text}`);
+});
+```
+
+Useful Chat SDK docs:
+
+- https://www.chat-sdk.dev/docs/usage
+- https://www.chat-sdk.dev/docs/posting-messages
+
+### Posting messages
+
+Chat SDK supports plain strings as well as richer message payloads. For example:
+
+```ts
+await thread.post("Plain text");
+
+await thread.post({
+  markdown: "**Hello** from Convex",
+});
+```
+
+If you need more advanced formatting, media, or adapter-specific behavior, use
+the Chat SDK docs as the source of truth for message payloads and capabilities.
+
+## API
+
+### `createChat(component, ctx, config)`
+
+Creates a Chat SDK bot backed by Convex state.
+
+- `component`: usually `components.chatSdk`
+- `ctx`: a Convex action or HTTP action context
+- `config`: standard Chat SDK config except `state`, which is provided by this
+  package
+
+### `registerWebhooks(http, createBot, options?)`
+
+Registers a POST wildcard route that dispatches requests to
+`bot.webhooks[adapterName]`.
+
+- `http`: your `httpRouter()`
+- `createBot`: function that builds the bot from the request context
+- `options.path`: optional path prefix, default `/chatsdk/`
+
+## Notes
+
+- This package is built on Chat SDK, so adapter behavior and message formats are
+  defined by Chat SDK itself.
+- Telegram is the only adapter tested in this package today.
+- If you use other adapters, follow the relevant Chat SDK adapter docs and
+  validate them in your own environment.
+
+Found a bug or want a new adapter example?
+[File an issue](https://github.com/johannesschiessl/convex-chat-sdk/issues).
