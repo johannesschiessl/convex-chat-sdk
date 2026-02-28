@@ -9,8 +9,17 @@ http.route({
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const bot = createBot(ctx);
+    const tasks: Promise<unknown>[] = [];
 
-    return await bot.webhooks.telegram(request);
+    const response = await bot.webhooks.telegram(request, {
+      waitUntil(task) {
+        tasks.push(task);
+      },
+    });
+
+    await Promise.allSettled(tasks);
+
+    return response;
   }),
 });
 
