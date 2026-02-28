@@ -1,11 +1,11 @@
-import { httpAction } from "./_generated/server";
 import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
 import { createBot } from "./bot";
 
 const http = httpRouter();
 
 http.route({
-  path: "/telegram",
+  path: "/webhooks/telegram",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const bot = createBot(ctx);
