@@ -5,10 +5,10 @@
     "": {
       "name": "@example/sample-component",
       "dependencies": {
-        "@chat-adapter/telegram": "^4.15.0",
         "chat": "^4.15.0",
       },
       "devDependencies": {
+        "@chat-adapter/telegram": "^4.15.0",
         "@convex-dev/eslint-plugin": "^1.1.1",
         "@edge-runtime/vm": "^5.0.0",
         "@eslint/eslintrc": "^3.3.3",
