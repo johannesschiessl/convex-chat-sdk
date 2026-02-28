@@ -4,9 +4,6 @@
   "workspaces": {
     "": {
       "name": "@example/sample-component",
-      "dependencies": {
-        "chat": "^4.15.0",
-      },
       "devDependencies": {
         "@chat-adapter/telegram": "^4.15.0",
         "@convex-dev/eslint-plugin": "^1.1.1",
@@ -17,6 +14,7 @@
         "@types/react": "^19.2.13",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.3",
+        "chat": "^4.15.0",
         "chokidar-cli": "3.0.0",
         "convex": "1.31.7",
         "convex-test": "0.0.41",
@@ -37,8 +35,8 @@
         "vitest": "4.0.18",
       },
       "peerDependencies": {
+        "chat": "^4.15.0",
         "convex": "^1.31.7",
-        "react": "^18.3.1 || ^19.0.0",
       },
     },
   },
