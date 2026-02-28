@@ -4,11 +4,7 @@
 
 Use [Chat SDK](https://www.chat-sdk.dev/) bots with
 [Convex](https://www.convex.dev/). This package provides a Convex component plus
-a small client API that wires Chat SDK state into Convex.
-
-Telegram is the only adapter tested with this component so far. More adapters
-should work in principle through Chat SDK, but they have not been validated in
-this package yet.
+a state adapter that wires Chat SDK state into Convex.
 
 ## Installation
 
@@ -77,7 +73,7 @@ Subscription state, locks, and key-value state are stored through the component.
 
 ### 3. Register webhook routes
 
-Register the Telegram webhook route directly in `convex/http.ts`:
+Register the webhook route directly in `convex/http.ts`:
 
 ```ts
 // convex/http.ts
@@ -88,7 +84,7 @@ import { createBot } from "./bot";
 const http = httpRouter();
 
 http.route({
-  path: "/telegram",
+  path: "/webhooks/telegram",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const bot = createBot(ctx);
@@ -98,35 +94,6 @@ http.route({
 
 export default http;
 ```
-
-With the configuration above, the Telegram webhook is available at:
-
-```text
-/telegram
-```
-
-## Telegram Setup
-
-The Telegram adapter in Chat SDK expects the standard Telegram bot credentials.
-Make these available to your Convex deployment:
-
-```sh
-TELEGRAM_BOT_TOKEN=...
-TELEGRAM_WEBHOOK_SECRET_TOKEN=...
-```
-
-Then register Telegram's webhook URL to point at your Convex HTTP endpoint. The
-exact URL depends on your Convex deployment and the route you chose above.
-
-Example:
-
-```text
-https://<your-convex-deployment-site-url>/telegram
-```
-
-See the Chat SDK Telegram adapter docs for the current setup details:
-
-- https://www.chat-sdk.dev/docs/adapters/telegram
 
 ## Writing Handlers
 
@@ -143,39 +110,24 @@ Useful Chat SDK docs:
 
 - https://www.chat-sdk.dev/docs/usage
 - https://www.chat-sdk.dev/docs/posting-messages
-
-### Posting messages
-
-Chat SDK supports plain strings as well as richer message payloads. For example:
-
-```ts
-await thread.post("Plain text");
-
-await thread.post({
-  markdown: "**Hello** from Convex",
-});
-```
-
-If you need more advanced formatting, media, or adapter-specific behavior, use
-the Chat SDK docs as the source of truth for message payloads and capabilities.
+- https://www.chat-sdk.dev/docs/adapters
 
 ## API
 
-### `createConvexState(ctx, component)`
+### `createConvexState(component, ctx)`
 
 Creates a Convex-backed Chat SDK state adapter.
 
-- `ctx`: a Convex action or HTTP action context
 - `component`: usually `components.chatSdk`
+- `ctx`: a Convex action or HTTP action context
 - returns: a Chat SDK `state` adapter
 
 ## Notes
 
 - This package is built on Chat SDK, so adapter behavior and message formats are
   defined by Chat SDK itself.
-- Telegram is the only adapter tested in this package today.
-- If you use other adapters, follow the relevant Chat SDK adapter docs and
+- Follow the relevant Chat SDK adapter docs and
   validate them in your own environment.
 
-Found a bug or want a new adapter example?
+Found a bug?
 [File an issue](https://github.com/johannesschiessl/convex-chat-sdk/issues).
