@@ -1,11 +1,4 @@
-import {
-  Chat,
-  type Adapter,
-  type ChatConfig,
-  type Lock,
-  type StateAdapter,
-  type WebhookOptions,
-} from "chat";
+import type { Adapter, Lock, StateAdapter, WebhookOptions } from "chat";
 import {
   httpActionGeneric,
   type GenericActionCtx,
@@ -16,13 +9,9 @@ import type { ComponentApi } from "../component/_generated/component.js";
 
 const WEBHOOK_PATH_PREFIX = "/chatsdk/";
 
-export type RegisterWebhooksOptions = {
+export type registerChatSdkWebhooksOptions = {
   path?: string;
 };
-
-export type CreateChatConfig<
-  TAdapters extends Record<string, Adapter> = Record<string, Adapter>,
-> = Omit<ChatConfig<TAdapters>, "state">;
 
 type BotWithWebhooks<TAdapters extends Record<string, Adapter>> = {
   webhooks: {
@@ -102,27 +91,19 @@ function createStateAdapter<
   };
 }
 
-export function createChat<
+export function createConvexState<
   DataModel extends GenericDataModel = GenericDataModel,
-  TAdapters extends Record<string, Adapter> = Record<string, Adapter>,
->(
-  component: ComponentApi,
-  ctx: GenericActionCtx<DataModel>,
-  config: CreateChatConfig<TAdapters>,
-) {
-  return new Chat<TAdapters>({
-    ...config,
-    state: createStateAdapter(component, ctx),
-  });
+>(ctx: GenericActionCtx<DataModel>, component: ComponentApi) {
+  return createStateAdapter(component, ctx);
 }
 
-export function registerWebhooks<
+export function registerChatSdkWebhooks<
   DataModel extends GenericDataModel = GenericDataModel,
   TAdapters extends Record<string, Adapter> = Record<string, Adapter>,
 >(
   http: HttpRouter,
   createBot: (ctx: GenericActionCtx<DataModel>) => BotWithWebhooks<TAdapters>,
-  options: RegisterWebhooksOptions = {},
+  options: registerChatSdkWebhooksOptions = {},
 ) {
   const pathPrefix = normalizeWebhookPathPrefix(
     options.path ?? WEBHOOK_PATH_PREFIX,

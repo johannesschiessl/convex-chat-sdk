@@ -1,8 +1,8 @@
 import { httpRouter } from "convex/server";
 import { describe, expect, test, vi } from "vitest";
-import { createChat, registerWebhooks } from "./index.js";
+import { createConvexState, registerChatSdkWebhooks } from "./index.js";
 
-describe("createChat", () => {
+describe("createConvexState", () => {
   test("forwards subscription and lock operations to the component api", async () => {
     const runMutation = vi
       .fn()
@@ -31,19 +31,13 @@ describe("createChat", () => {
       },
     } as const;
 
-    const adapter = createChat(
-      component as never,
+    const adapter = createConvexState(
       {
         runMutation,
         runQuery,
       } as never,
-      {
-        userName: "convex-bot",
-        adapters: {
-          telegram: {} as never,
-        },
-      },
-    ).getState();
+      component as never,
+    );
 
     await expect(adapter.connect()).resolves.toBeUndefined();
     await expect(adapter.disconnect()).resolves.toBeUndefined();
@@ -104,6 +98,39 @@ describe("createChat", () => {
     });
   });
 
+  test("accepts ctx and component directly", async () => {
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const runQuery = vi.fn().mockResolvedValue(false);
+
+    const component = {
+      lib: {
+        subscribe: { name: "subscribe" },
+        unsubscribe: { name: "unsubscribe" },
+        isSubscribed: { name: "isSubscribed" },
+        acquireLock: { name: "acquireLock" },
+        releaseLock: { name: "releaseLock" },
+        extendLock: { name: "extendLock" },
+        get: { name: "get" },
+        set: { name: "set" },
+        del: { name: "del" },
+      },
+    } as const;
+
+    const adapter = createConvexState(
+      {
+        runMutation,
+        runQuery,
+      } as never,
+      component as never,
+    );
+
+    await adapter.subscribe("thread-1");
+
+    expect(runMutation).toHaveBeenCalledWith(component.lib.subscribe, {
+      threadId: "thread-1",
+    });
+  });
+
   test("serializes writes and parses reads through the state adapter", async () => {
     const runMutation = vi
       .fn()
@@ -129,19 +156,13 @@ describe("createChat", () => {
       },
     } as const;
 
-    const adapter = createChat(
-      component as never,
+    const adapter = createConvexState(
       {
         runMutation,
         runQuery,
       } as never,
-      {
-        userName: "convex-bot",
-        adapters: {
-          telegram: {} as never,
-        },
-      },
-    ).getState();
+      component as never,
+    );
 
     await expect(adapter.get("state")).resolves.toEqual({ count: 2 });
     await expect(adapter.get("missing")).resolves.toBeNull();
@@ -170,7 +191,7 @@ describe("createChat", () => {
   });
 });
 
-describe("registerWebhooks", () => {
+describe("registerChatSdkWebhooks", () => {
   test("registers a wildcard webhook route and dispatches to the matching adapter", async () => {
     const createBot = vi.fn((_ctx: unknown) => ({
       webhooks: {
@@ -194,7 +215,7 @@ describe("registerWebhooks", () => {
     let waitUntilSettled = false;
 
     const http = httpRouter();
-    expect(registerWebhooks(http, createBot)).toBe(http);
+    expect(registerChatSdkWebhooks(http, createBot)).toBe(http);
     expect(http.getRoutes()).toHaveLength(1);
     expect(http.getRoutes()[0]?.[0]).toBe("/chatsdk/*");
     expect(http.getRoutes()[0]?.[1]).toBe("POST");
@@ -225,7 +246,7 @@ describe("registerWebhooks", () => {
       },
     }));
 
-    const http = registerWebhooks(httpRouter(), createBot);
+    const http = registerChatSdkWebhooks(httpRouter(), createBot);
     const handler = http.getRoutes()[0]?.[2] as unknown as {
       _handler: (ctx: unknown, request: Request) => Promise<Response>;
     };
@@ -247,7 +268,7 @@ describe("registerWebhooks", () => {
       },
     }));
 
-    const http = registerWebhooks(httpRouter(), createBot, {
+    const http = registerChatSdkWebhooks(httpRouter(), createBot, {
       path: "/webhooks",
     });
 
@@ -291,7 +312,7 @@ describe("registerWebhooks", () => {
       },
     }));
 
-    const http = registerWebhooks(httpRouter(), createBot);
+    const http = registerChatSdkWebhooks(httpRouter(), createBot);
     const handler = http.getRoutes()[0]?.[2] as unknown as {
       _handler: (ctx: unknown, request: Request) => Promise<Response>;
     };
