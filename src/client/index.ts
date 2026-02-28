@@ -147,13 +147,17 @@ export function registerWebhooks<
       }
 
       const tasks: Promise<unknown>[] = [];
-      const response = await handler(request, {
-        waitUntil(task) {
-          tasks.push(task);
-        },
-      });
-
-      await Promise.allSettled(tasks);
+      const response = await (async () => {
+        try {
+          return await handler(request, {
+            waitUntil(task) {
+              tasks.push(task);
+            },
+          });
+        } finally {
+          await Promise.allSettled(tasks);
+        }
+      })();
 
       return response;
     }),

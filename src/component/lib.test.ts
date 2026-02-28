@@ -261,4 +261,35 @@ describe("component lib", () => {
       "permanent-kv",
     ]);
   });
+
+  test("cleanupExpired does not let non-expiring kv entries starve expired ones", async () => {
+    const t = initConvexTest();
+    const now = Date.now();
+
+    await t.mutation(api.lib.set, {
+      key: "permanent-kv",
+      valueJson: JSON.stringify({ ok: "forever" }),
+    });
+    await t.mutation(api.lib.set, {
+      key: "expired-kv",
+      valueJson: JSON.stringify({ ok: false }),
+      ttlMs: 100,
+    });
+
+    const result = await t.mutation(internal.lib.cleanupExpired, {
+      now: now + 101,
+      limit: 1,
+    });
+
+    expect(result).toEqual({
+      deletedLocks: 0,
+      deletedKv: 1,
+    });
+
+    const remainingKv = await t.run(async (ctx) => {
+      return await ctx.db.query("kv").collect();
+    });
+    expect(remainingKv).toHaveLength(1);
+    expect(remainingKv[0]).toMatchObject({ key: "permanent-kv" });
+  });
 });

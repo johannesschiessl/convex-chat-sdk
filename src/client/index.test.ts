@@ -265,4 +265,52 @@ describe("registerWebhooks", () => {
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("telegram");
   });
+
+  test("awaits waitUntil tasks before rethrowing webhook handler errors", async () => {
+    let releaseTask: (() => void) | undefined;
+    let waitUntilSettled = false;
+    const createBot = vi.fn(() => ({
+      webhooks: {
+        telegram: vi.fn(
+          async (
+            _request: Request,
+            options?: { waitUntil?: (task: Promise<unknown>) => void },
+          ) => {
+            options?.waitUntil?.(
+              new Promise<void>((resolve) => {
+                releaseTask = () => {
+                  waitUntilSettled = true;
+                  resolve();
+                };
+              }),
+            );
+
+            throw new Error("webhook failed");
+          },
+        ),
+      },
+    }));
+
+    const http = registerWebhooks(httpRouter(), createBot);
+    const handler = http.getRoutes()[0]?.[2] as unknown as {
+      _handler: (ctx: unknown, request: Request) => Promise<Response>;
+    };
+
+    const responsePromise = handler._handler(
+      {},
+      new Request("https://example.com/chatsdk/telegram", { method: "POST" }),
+    );
+    let rejected = false;
+    responsePromise.catch(() => {
+      rejected = true;
+    });
+
+    await Promise.resolve();
+    expect(rejected).toBe(false);
+
+    releaseTask?.();
+
+    await expect(responsePromise).rejects.toThrow("webhook failed");
+    expect(waitUntilSettled).toBe(true);
+  });
 });

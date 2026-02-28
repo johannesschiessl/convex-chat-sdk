@@ -252,7 +252,9 @@ export const cleanupExpired = internalMutation({
 
     const expiredKv = await ctx.db
       .query("kv")
-      .withIndex("by_expiresAt", (q) => q.lte("expiresAt", ts))
+      .withIndex("by_expiresAt", (q) =>
+        q.gt("expiresAt", 0).lte("expiresAt", ts),
+      )
       .take(max);
 
     for (const kv of expiredKv) {
