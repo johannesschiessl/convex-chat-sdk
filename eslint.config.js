@@ -22,7 +22,6 @@ export default [
       parserOptions: {
         project: [
           "./tsconfig.json",
-          "./example/tsconfig.json",
           "./example/convex/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
