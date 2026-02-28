@@ -4,8 +4,7 @@
 
 Use [Chat SDK](https://www.chat-sdk.dev/) bots with
 [Convex](https://www.convex.dev/). This package provides a Convex component plus
-a small client API that wires Chat SDK state into Convex and exposes adapter
-webhooks through `http.ts`.
+a small client API that wires Chat SDK state into Convex.
 
 Telegram is the only adapter tested with this component so far. More adapters
 should work in principle through Chat SDK, but they have not been validated in
@@ -26,7 +25,7 @@ The basic setup has three parts:
 
 1. Install the Convex component in `convex/convex.config.ts`.
 2. Create a bot in `convex/bot.ts`.
-3. Register webhook routes in `convex/http.ts`.
+3. Register adapter-specific webhook routes in `convex/http.ts`.
 
 ### 1. Install the component
 
@@ -78,36 +77,33 @@ Subscription state, locks, and key-value state are stored through the component.
 
 ### 3. Register webhook routes
 
-Register a wildcard webhook route in `convex/http.ts` and point it at your bot
-factory:
+Register the Telegram webhook route directly in `convex/http.ts`:
 
 ```ts
 // convex/http.ts
-import { registerChatSdkWebhooks } from "convex-chat-sdk";
 import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
 import { createBot } from "./bot";
 
 const http = httpRouter();
 
-registerChatSdkWebhooks(http, createBot, { path: "/chatsdk" });
+http.route({
+  path: "/telegram",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const bot = createBot(ctx);
+    return bot.webhooks.telegram(request);
+  }),
+});
 
 export default http;
 ```
 
-With the configuration above, adapter webhooks are available at:
+With the configuration above, the Telegram webhook is available at:
 
 ```text
-/chatsdk/<adapter-name>
+/telegram
 ```
-
-For Telegram, that means:
-
-```text
-/chatsdk/telegram
-```
-
-If you omit the `path` option, the default prefix is `/chatsdk/`, so Telegram
-would be exposed at `/chatsdk/telegram`.
 
 ## Telegram Setup
 
@@ -120,12 +116,12 @@ TELEGRAM_WEBHOOK_SECRET_TOKEN=...
 ```
 
 Then register Telegram's webhook URL to point at your Convex HTTP endpoint. The
-exact URL depends on your Convex deployment and the `path` you chose above.
+exact URL depends on your Convex deployment and the route you chose above.
 
 Example:
 
 ```text
-https://<your-convex-deployment-site-url>/chatsdk/telegram
+https://<your-convex-deployment-site-url>/telegram
 ```
 
 See the Chat SDK Telegram adapter docs for the current setup details:
@@ -172,15 +168,6 @@ Creates a Convex-backed Chat SDK state adapter.
 - `ctx`: a Convex action or HTTP action context
 - `component`: usually `components.chatSdk`
 - returns: a Chat SDK `state` adapter
-
-### `registerChatSdkWebhooks(http, createBot, options?)`
-
-Registers a POST wildcard route that dispatches requests to
-`bot.webhooks[adapterName]`.
-
-- `http`: your `httpRouter()`
-- `createBot`: function that builds the bot from the request context
-- `options.path`: optional path prefix, default `/chatsdk/`
 
 ## Notes
 

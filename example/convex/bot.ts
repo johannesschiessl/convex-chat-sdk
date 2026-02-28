@@ -10,7 +10,7 @@ export const createBot = (ctx: ActionCtx) => {
     adapters: {
       telegram: createTelegramAdapter(),
     },
-    state: createConvexState(ctx, components.chatSdk),
+    state: createConvexState(components.chatSdk, ctx),
   });
 
   bot.onNewMessage(/.+/s, async (thread, message) => {
